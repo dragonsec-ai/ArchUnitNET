@@ -14,7 +14,8 @@ using System.Text.RegularExpressions;
 /// character within a segment, <c>[...]</c> is a character class (<c>[!...]</c> negates it), and
 /// <c>(**)</c> is the capturing form of <c>**</c> — it matches the same text and captures it, which
 /// is how the library's slices are named. Matching is case-sensitive. The whole glob is anchored, so
-/// a glob matches a whole candidate, not a substring of one.
+/// a glob matches a whole candidate, not a substring of one. A trailing <c>/**</c> includes the
+/// base path itself as well as its descendants, so <c>src/Models/**</c> also matches <c>src/Models</c>.
 /// </para>
 /// <para>
 /// Separators are normalised before the glob is compiled: a backslash is treated as the same
@@ -120,8 +121,17 @@ public static class RegexFactory
                     break;
 
                 case '/':
-                    pattern.Append('/');
-                    i += 1;
+                    if (i + 3 == glob.Length && glob[i + 1] == '*' && glob[i + 2] == '*')
+                    {
+                        pattern.Append("(?:/.*)?");
+                        i += 3;
+                    }
+                    else
+                    {
+                        pattern.Append('/');
+                        i += 1;
+                    }
+
                     break;
 
                 default:

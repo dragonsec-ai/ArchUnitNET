@@ -72,3 +72,23 @@ jobs:
 
       - name: Run the dogfooding architecture tests
         run: dotnet test tests/ArchUnitSharp.Dogfood.Tests --no-restore
+
+  packages:
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Pack complete dependency graph
+        run: dotnet pack ArchUnitSharp.sln -c Release -p:Version=3.0.0-beta.1 -o artifacts/packages
+      - name: Inspect packages and test isolated consumer
+        run: python eng/verify-packages.py --version 3.0.0-beta.1

@@ -1,9 +1,10 @@
 # ArchUnit.NET
 
-The canonical repository is [LukasNiessen/ArchUnitNET](https://github.com/LukasNiessen/ArchUnitNET).
+The canonical repository is [dragonsec-ai/ArchUnitNET](https://github.com/dragonsec-ai/ArchUnitNET).
 This implementation was developed by [Robey Beswick](https://github.com/RobeyBeswick) as
 ArchUnitSharp and promoted here on 5 October 2026. Its project names and C# namespaces remain
-`ArchUnitSharp` while the package and API transition is planned. The previous implementation,
+`ArchUnitSharp`. The proposed package transition is documented in the
+[migration guide](docs/guide/migration.md). The previous implementation,
 including its branches and release tags, is preserved in
 [Deprecated-ArchUnitNET](https://github.com/LukasNiessen/Deprecated-ArchUnitNET).
 
@@ -43,6 +44,11 @@ the composition root and the assertion adapter to your test project:
 `.AssertPasses()` and `.AssertFails()`. Under any other test framework, or when you want no adapter,
 use the framework-agnostic helper `ArchUnitSharp.Testing.RuleAssert.Passes(rule)` /
 `RuleAssert.Fails(rule)`; it works with every framework and needs no configuration.
+
+The proposed `3.0.0-beta.1` packages can be built and tested with an isolated consumer using
+the [release guide](docs/guide/release.md). Public publication remains blocked until the promoted
+implementation's license is confirmed. This is a breaking .NET 10/API transition, not an
+in-place upgrade of the existing NuGet package.
 
 ## A first rule in ten lines
 

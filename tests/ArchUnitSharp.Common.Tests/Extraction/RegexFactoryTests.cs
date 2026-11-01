@@ -39,6 +39,23 @@ public class RegexFactoryTests
         Assert.DoesNotMatch(regex, "src/ACar.cs");
     }
 
+    [Theory]
+    [InlineData("src/Models/**")]
+    [InlineData(@"src\Models\**")]
+    public void Trailing_double_star_includes_the_base_path_and_descendants(string glob)
+    {
+        var regex = RegexFactory.CompileGlob(glob);
+
+        Assert.Matches(regex, "src/Models");
+        Assert.Matches(regex, "src/Models/");
+        Assert.Matches(regex, "src/Models/Car.cs");
+        Assert.Matches(regex, "src/Models/Nested/Car.cs");
+        Assert.DoesNotMatch(regex, "src");
+        Assert.DoesNotMatch(regex, "src/ModelsExtra");
+        Assert.DoesNotMatch(regex, "src/ModelsExtra/Car.cs");
+        Assert.DoesNotMatch(regex, "src/models");
+    }
+
     [Fact]
     public void Parenthesized_double_star_captures_the_segments_between_the_literals()
     {

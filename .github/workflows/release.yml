@@ -1,0 +1,95 @@
+name: prepare or publish packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Coordinated SemVer package version
+        required: true
+        default: 3.0.0-beta.1
+      publish:
+        description: Publish the validated artifacts (requires resolved license and NuGet environment)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nuget-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Validate version
+        run: |
+          python - <<'PY'
+          import os, re
+          if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?', os.environ['RELEASE_VERSION']):
+              raise SystemExit('Expected a plain SemVer release version.')
+          PY
+      - name: Restore and build
+        run: |
+          dotnet restore ArchUnitSharp.sln -p:Version="$RELEASE_VERSION"
+          dotnet build ArchUnitSharp.sln -c Release --no-restore -p:Version="$RELEASE_VERSION"
+      - name: Check formatting and tests
+        run: |
+          dotnet format ArchUnitSharp.sln --verify-no-changes --no-restore
+          dotnet test ArchUnitSharp.sln -c Release --no-build --no-restore -p:Version="$RELEASE_VERSION"
+      - name: Pack and test isolated consumer
+        run: |
+          dotnet pack ArchUnitSharp.sln -c Release --no-build --no-restore -p:Version="$RELEASE_VERSION" -o artifacts/packages
+          python eng/verify-packages.py --version "$RELEASE_VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+  publish:
+    if: inputs.publish && github.ref == 'refs/heads/main'
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: nuget
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/packages
+      - name: Require confirmed license in every package
+        run: python eng/verify-packages.py --version "$RELEASE_VERSION" --require-license --inspect-only
+      - name: Publish the validated artifacts
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          test -n "$NUGET_API_KEY" || { echo 'Configure NUGET_API_KEY in the nuget environment.'; exit 1; }
+          dotnet nuget push 'artifacts/packages/*.nupkg' --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+      - name: Verify public installation
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if python eng/verify-packages.py --version "$RELEASE_VERSION" --require-license --public; then
+              exit 0
+            fi
+            sleep 30
+          done
+          exit 1

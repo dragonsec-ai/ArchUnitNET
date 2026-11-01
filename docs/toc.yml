@@ -4,6 +4,10 @@
   items:
     - name: Getting started
       href: guide/getting-started.md
+    - name: Migrating from the previous implementation
+      href: guide/migration.md
+    - name: Building and releasing packages
+      href: guide/release.md
     - name: The fluent grammar
       href: guide/fluent-grammar.md
     - name: Files

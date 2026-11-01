@@ -13,6 +13,7 @@
     <ProjectReference Include="..\ArchUnitSharp.Common\ArchUnitSharp.Common.csproj" />
     <ProjectReference Include="..\ArchUnitSharp.Files\ArchUnitSharp.Files.csproj" />
     <ProjectReference Include="..\ArchUnitSharp.Layers\ArchUnitSharp.Layers.csproj" />
+    <ProjectReference Include="..\ArchUnitSharp.Metrics\ArchUnitSharp.Metrics.csproj" />
     <ProjectReference Include="..\ArchUnitSharp.Slices\ArchUnitSharp.Slices.csproj" />
   </ItemGroup>
 

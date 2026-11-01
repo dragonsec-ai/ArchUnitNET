@@ -28,6 +28,20 @@ public class MatcherFactoryTests
         Assert.True(any.Matches("src/Models/Car.cs"));
     }
 
+    [Theory]
+    [InlineData("src/Models/**")]
+    [InlineData(@"src\Models\**")]
+    public void Recursive_folder_includes_direct_and_nested_children_but_not_sibling_folders(string glob)
+    {
+        var filter = MatcherFactory.Folder(glob);
+
+        Assert.True(filter.Matches("src/Models/Car.cs"));
+        Assert.True(filter.Matches("src/Models/Nested/Car.cs"));
+        Assert.True(filter.Matches(@"src\Models\Car.cs"));
+        Assert.False(filter.Matches("src/ModelsExtra/Car.cs"));
+        Assert.False(filter.Matches("src/Car.cs"));
+    }
+
     [Fact]
     public void Path_binds_the_whole_identifier_target()
     {

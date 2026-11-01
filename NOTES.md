@@ -664,3 +664,7 @@ restore, build (0 warnings, 0 errors), format --verify-no-changes, 112 extractio
 tests passed (test-attribute count 166 at base -> 213 now, nothing removed, nothing skipped), no
 vulnerable packages. The crash is the reviewer-tooling hang class already noted in Round 2, not a
 code defect; there is nothing to fix.
+
+WHY: Issue #53 packaging preparation uses the proposed ArchUnit 3.0.0-beta.1 identity with coordinated ArchUnitSharp.* dependencies and retains net10.0/namespaces; public publication is explicitly gated on a reviewed LICENSE because neither promoted repository supplies a confirmed license and the legacy package's declaration cannot be assumed.
+WHY: Issue #54 is addressed only for the demonstrated trailing-/** base-folder omission; broader sibling glob compatibility choices remain open rather than changing unrelated selector semantics in a release-packaging PR.
+WHY: Issue #51 adds Testing→Metrics to format structured metric violations; the dogfood dependency table now permits that acyclic edge while Metrics remains Common-only. No architecture checks are skipped.
