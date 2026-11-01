@@ -37,6 +37,25 @@ public class FilesTests
     }
 
     [Fact]
+    public void Recursive_folder_rules_check_a_direct_child_even_when_a_nested_child_keeps_the_selection_non_empty()
+    {
+        var domain = new Files(Graph(
+            Self("src/Domain/Order.cs"),
+            Self("src/Domain/Nested/Value.cs"),
+            Self("src/Infrastructure/Repository.cs"),
+            Self("src/Infrastructure/Nested/Cache.cs"),
+            new Edge("src/Domain/Order.cs", "src/Infrastructure/Repository.cs", external: false, ImportKind.Using)))
+            .InFolder("src/Domain/**");
+
+        IReadOnlyList<Violation> violations = domain.ShouldNot().DependOn().InFolder("src/Infrastructure/**").Check();
+
+        Assert.Equal(
+            new Violation[] { new DependencyViolation("src/Domain/Order.cs", "src/Infrastructure/Repository.cs") },
+            violations);
+        Assert.Equal(new[] { "src/Domain/Nested/Value.cs", "src/Domain/Order.cs" }, domain.Select());
+    }
+
+    [Fact]
     public void InPath_selects_by_the_whole_path()
     {
         var files = new Files(Graph(

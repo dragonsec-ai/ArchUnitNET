@@ -127,7 +127,7 @@ public class DogfoodArchitectureTests
             .WhereLayer("Layers").MayOnlyDependOnLayers("Common")
             .WhereLayer("Metrics").MayOnlyDependOnLayers("Common")
             .WhereLayer("Slices").MayOnlyDependOnLayers("Common", "Projection")
-            .WhereLayer("Testing").MayOnlyDependOnLayers("Common", "Files", "Layers", "Slices")
+            .WhereLayer("Testing").MayOnlyDependOnLayers("Common", "Files", "Layers", "Metrics", "Slices")
             .WhereLayer("Testing.Xunit").MayOnlyDependOnLayers("Common", "Testing")
             .WhereLayer("Surface").MayOnlyDependOnLayers(
                 "Common", "Projection", "Extraction", "Files", "Graph", "Layers", "Metrics", "Slices", "Testing", "Testing.Xunit")

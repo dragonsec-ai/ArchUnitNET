@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ArchUnitSharp\ArchUnitSharp.csproj" />
+    <ProjectReference Include="..\..\src\ArchUnitSharp.Testing.Xunit\ArchUnitSharp.Testing.Xunit.csproj" />
   </ItemGroup>
 
 </Project>

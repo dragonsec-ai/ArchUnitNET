@@ -1,8 +1,10 @@
 namespace ArchUnitSharp.Testing;
 
+using System.Globalization;
 using ArchUnitSharp.Common.Extraction;
 using ArchUnitSharp.Files;
 using ArchUnitSharp.Layers;
+using ArchUnitSharp.Metrics;
 using ArchUnitSharp.Slices;
 
 /// <summary>
@@ -21,7 +23,8 @@ using ArchUnitSharp.Slices;
 /// <see cref="AdhereToViolation"/>, <see cref="DependencyViolation"/>,
 /// <see cref="CycleViolation"/>, <see cref="LayerViolation"/>,
 /// <see cref="ForbiddenDependencyViolation"/>, <see cref="MissingDependencyViolation"/> and
-/// <see cref="DiagramAdherenceViolation"/> — and a violation subtype this factory does not know is a
+/// <see cref="DiagramAdherenceViolation"/>, together with the count, custom, cohesion and distance
+/// metric violations — and a violation subtype this factory does not know is a
 /// defect, so it throws rather than fabricate a message.
 /// </para>
 /// <para>
@@ -56,10 +59,92 @@ public static class ViolationFactory
                 $"Slice '{v.Slice}' must contain a dependency from a file matching '{v.From}' to a file matching '{v.To}'.",
             DiagramAdherenceViolation v =>
                 $"Slice '{v.SourceSlice}' must not depend on '{v.TargetSlice}' (not in the diagram).",
+            MetricViolation v => FormatMetric(
+                v.File, v.Class, CountMetricName(v.MetricKind), v.Value, v.Comparison, v.Threshold, v.Message),
+            CustomMetricViolation v => FormatMetric(
+                v.File, v.Class, $"custom metric '{v.MetricName}' ({v.Description})",
+                v.Value, v.Comparison, v.Threshold, v.Message),
+            LcomMetricViolation v => FormatMetric(
+                v.File, v.Class, LcomMetricName(v.MetricKind), v.Value, v.Comparison, v.Threshold, v.Message),
+            DistanceMetricViolation v => FormatMetric(
+                v.File, null, DistanceMetricName(v.MetricKind), v.Value, v.Comparison, v.Threshold, v.Message),
+            DistanceZoneViolation v =>
+                $"File '{v.File}': abstractness is {Number(v.Abstractness)} and instability is {Number(v.Instability)}; "
+                + $"must not be in zone of {ZoneName(v.Zone)}.",
             _ => throw new ArgumentOutOfRangeException(
                 nameof(violation),
                 violation,
                 "Violation is not a defined Violation subtype."),
         };
     }
+
+    private static string FormatMetric(
+        string file,
+        string? className,
+        string metric,
+        IFormattable value,
+        MetricComparison? comparison,
+        IFormattable? threshold,
+        string? message)
+    {
+        string subject = className is null ? $"File '{file}'" : $"Class '{className}' in file '{file}'";
+        string requirement = comparison is { } kind && threshold is { } limit
+            ? $"{ComparisonWords(kind)} {Number(limit)}"
+            : $"satisfy '{message}'";
+        return $"{subject}: {metric} is {Number(value)}; should {requirement}.";
+    }
+
+    private static string Number(IFormattable value) => value.ToString(null, CultureInfo.InvariantCulture);
+
+    private static string ComparisonWords(MetricComparison comparison) => comparison switch
+    {
+        MetricComparison.Below => "be below",
+        MetricComparison.Above => "be above",
+        MetricComparison.Equal => "be",
+        MetricComparison.BelowOrEqual => "be below or equal to",
+        MetricComparison.AboveOrEqual => "be above or equal to",
+        _ => throw new ArgumentOutOfRangeException(nameof(comparison), comparison, "Unknown metric comparison."),
+    };
+
+    private static string CountMetricName(CountMetricKind kind) => kind switch
+    {
+        CountMetricKind.MethodCount => "method count",
+        CountMetricKind.FieldCount => "field count",
+        CountMetricKind.LinesOfCode => "lines of code",
+        CountMetricKind.Statements => "statements",
+        CountMetricKind.Imports => "imports",
+        CountMetricKind.Classes => "classes",
+        CountMetricKind.Interfaces => "interfaces",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown count metric."),
+    };
+
+    private static string LcomMetricName(LcomMetricKind kind) => kind switch
+    {
+        LcomMetricKind.Lcom96a => "lcom96a",
+        LcomMetricKind.Lcom96b => "lcom96b",
+        LcomMetricKind.Lcom1 => "lcom1",
+        LcomMetricKind.Lcom2 => "lcom2",
+        LcomMetricKind.Lcom3 => "lcom3",
+        LcomMetricKind.Lcom4 => "lcom4",
+        LcomMetricKind.Lcom5 => "lcom5",
+        LcomMetricKind.LcomStar => "lcom*",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown cohesion metric."),
+    };
+
+    private static string DistanceMetricName(DistanceMetricKind kind) => kind switch
+    {
+        DistanceMetricKind.Abstractness => "abstractness",
+        DistanceMetricKind.Instability => "instability",
+        DistanceMetricKind.DistanceFromMainSequence => "distance from main sequence",
+        DistanceMetricKind.CouplingFactor => "coupling factor",
+        DistanceMetricKind.NormalisedDistance => "normalised distance",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown distance metric."),
+    };
+
+    private static string ZoneName(DistanceZone zone) => zone switch
+    {
+        DistanceZone.Pain => "pain",
+        DistanceZone.Uselessness => "uselessness",
+        _ => throw new ArgumentOutOfRangeException(nameof(zone), zone, "Unknown distance zone."),
+    };
 }
